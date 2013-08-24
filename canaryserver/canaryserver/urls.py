@@ -1,8 +1,21 @@
 from django.conf.urls import patterns, include, url
+from canary.models import Temperature
+from rest_framework import viewsets, routers
+from rest_framework.routers import DefaultRouter
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
+
+# rest_framework ViewSets define the view behavior.
+class TemperatureViewSet(viewsets.ModelViewSet):
+    model = Temperature
+
+# Routers provide an easy way of automatically determining the URL conf
+router = routers.DefaultRouter()
+router.register(r'temperatures', TemperatureViewSet)
+# router.register(r'groups', GroupViewSet)
+
 
 urlpatterns = patterns('',
     # Examples:
@@ -14,4 +27,7 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^api/v1/auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^api/v1/', include(router.urls)),
 )
+
