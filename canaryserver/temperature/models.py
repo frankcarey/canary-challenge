@@ -2,6 +2,23 @@ from django.db import models
 
 # Create your models here.
 
-class Temperature(models.Modle):
-    data = models.IntegerField(default=null)
+class Customer(models.Model):
+    name = models.CharField(max_length=200)
+    def __unicode__(self):
+        return self.name
+
+class Device(models.Model):
+    serial = models.CharField(max_length=200)
+    customer =  models.ForeignKey(Customer)
+    def __unicode__(self):
+        return self.serial
+
+class Temperature(models.Model):
+    data = models.IntegerField()
     timestamp = models.DateTimeField()
+    device = models.ForeignKey(Device)
+
+    def __unicode__(self):
+        return unicode(self.data)
+
+
