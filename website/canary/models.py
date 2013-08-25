@@ -15,7 +15,7 @@ class Device(models.Model):
 
 class Temperature(models.Model):
     data = models.IntegerField()
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(auto_now_add=True)
     device = models.ForeignKey(Device)
 
     def __unicode__(self):
