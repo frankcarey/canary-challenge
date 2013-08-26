@@ -1,4 +1,5 @@
 from django.db import models
+import datetime
 
 # Create your models here.
 
@@ -15,9 +16,13 @@ class Device(models.Model):
 
 class Temperature(models.Model):
     data = models.IntegerField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(blank=True)
     device = models.ForeignKey(Device)
-
+    def save(self, *args, **kwargs):
+        # Create a timestamp if one is not given.
+        if (not self.timestamp):
+            self.timestamp = datetime.datetime.today()
+        return super(Temperature, self).save(*args, **kwargs)
     def __unicode__(self):
         return unicode(self.data)
 

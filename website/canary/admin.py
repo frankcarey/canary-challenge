@@ -1,8 +1,14 @@
 from django.contrib import admin
-from canary.models import Customer
-from canary.models import Device
-from canary.models import Temperature
+from canary.models import Customer, Device, Temperature
 
-admin.site.register(Customer)
-admin.site.register(Device)
-admin.site.register(Temperature)
+class TemperatureInline(admin.TabularInline):
+    model = Temperature
+class DeviceInline(admin.TabularInline):
+    model = Device
+class CustomerAdmin(admin.ModelAdmin):
+    inlines = [DeviceInline]
+class DeviceAdmin(admin.ModelAdmin):
+    inlines = [TemperatureInline]
+
+admin.site.register(Device, DeviceAdmin)
+admin.site.register(Customer, CustomerAdmin)
