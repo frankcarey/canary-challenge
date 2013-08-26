@@ -1,10 +1,12 @@
 #!/usr/bin/python
 
-import sys, time, random, json
+import sys, time, random, json, socket
 import logging as log
 import requests
 
 
+STATUS_SERVER = '127.0.0.1'
+STATUS_PORT = 8080
 SERVER = 'http://127.0.0.1:8000/'
 API_ENDPOINT = 'api/v1/temperatures/'
 USER = 'canary'
@@ -31,6 +33,8 @@ class Canary:
             self.session = requests.Session()
             self.session.auth =(USER, PASS)
             r = self.session.get(SERVER + API_ENDPOINT, )
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((STATUS_SERVER, STATUS_PORT))
             print r.text
             #@todo connect to server
             log.info('Connecting to the server.')
@@ -72,6 +76,7 @@ def main():
     while True:
         #@todo get the (fake) temp and send a request to the api.
         canary.sendTemp(random.randrange(0, 100))
+        canary.socket.send('hello')
         time.sleep(5)
 
 # Standard boilerplate to call the main() function to begin
