@@ -76,7 +76,7 @@ def main():
     while True:
         #@todo get the (fake) temp and send a request to the api.
         canary.sendTemp(random.randrange(0, 100))
-        canary.socket.send('hello')
+        canary.socket.send('hello\r\n')
         time.sleep(5)
 
 # Standard boilerplate to call the main() function to begin
