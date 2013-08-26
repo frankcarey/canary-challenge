@@ -1,56 +1,45 @@
 import errno
 import functools
 import socket
-from tornado import ioloop, iostream
+from tornado import ioloop, iostream, tcpserver
+import logging
 
+class StatusServer(tcpserver.TCPServer):
+    def __init__(self, io_loop=None, ssl_options=None, **kwargs):
+        logging.info('A status server has started')
+        tcpserver.TCPServer.__init__(self, io_loop=io_loop, ssl_options=ssl_options, **kwargs)
 
-class Connection(object):
-    def __init__(self, connection):
-        self.stream = iostream.IOStream(connection)
-        self._read()
+    def handle_stream(self, stream, address):
+        StatusConnection(stream, address)
 
-    def _read(self):
-        self.stream.read_until('\r\n', self._eol_callback)
+class StatusConnection(object):
+    stream_set = set([])
+    def __init__(self, stream, address):
+        logging.info('received a new connection from %s', address)
+        self.stream = stream
+        self.address = address
+        self.stream_set.add(self.stream)
+        self.stream.set_close_callback(self._on_close)
+        self.stream.read_until('\n', self._on_read_line)
 
-    def _eol_callback(self, data):
-        self.handle_data(data)
-
-
-def connection_ready(sock, fd, events):
-    while True:
-        try:
-            connection, address = sock.accept()
-        except socket.error, e:
-            if e[0] not in (errno.EWOULDBLOCK, errno.EAGAIN):
-                raise
-            return
-        else:
-            connection.setblocking(0)
-            CommunicationHandler(connection)
-
-
-class CommunicationHandler(Connection):
-    """Put your app logic here"""
-    def handle_data(self, data):
-        print data
-        self.stream.write(data)
-        self._read()
-
+    def _on_read_line(self):
+        logging.info('read a new line from %s', self.address)
+        for stream in self.stream_set:
+            stream.write(data, self._on_write_complete)
+    def _on_write_complete(self):
+        logging.info('write a line to %s', self.address)
+        if not self.stream.reading():
+            self.stream.read_until('\n', self._on_read_line)
+ 
+    def _on_close(self):
+        logging.info('client quit %s', self.address)
+        self.stream_set.remove(self.stream)
 
 if __name__ == '__main__':
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setblocking(0)
-    sock.bind(("127.0.0.1", 8080))
-    sock.listen(128)
-
-    io_loop = ioloop.IOLoop.instance()
-    callback = functools.partial(connection_ready, sock)
-    io_loop.add_handler(sock.fileno(), callback, io_loop.READ)
-
     try:
-        io_loop.start()
+        server = StatusServer()
+        server.listen(8080)
+        ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
-        io_loop.stop()
+        ioloop.IOLoop.instance().stop()
         print "\nexited cleanly"
