@@ -10,6 +10,7 @@ class Customer(models.Model):
 
 class Device(models.Model):
     serial = models.CharField(max_length=200)
+    privacyMode = models.BooleanField()
     customer =  models.ForeignKey(Customer)
     def __unicode__(self):
         return self.serial
