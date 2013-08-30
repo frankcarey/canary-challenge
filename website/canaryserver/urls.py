@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, include, url
-from canary.models import Temperature
+from canary.models import Temperature, Device
 from rest_framework import viewsets, routers
 from rest_framework.routers import DefaultRouter
 
@@ -11,10 +11,16 @@ admin.autodiscover()
 class TemperatureViewSet(viewsets.ModelViewSet):
     model = Temperature
 
+# rest_framework ViewSets define the view behavior.
+class DeviceViewSet(viewsets.ModelViewSet):
+    model = Device
+    filter_fields = ['serial']
+
+
 # Routers provide an easy way of automatically determining the URL conf
 router = routers.DefaultRouter()
 router.register(r'temperatures', TemperatureViewSet)
-# router.register(r'groups', GroupViewSet)
+router.register(r'devices', DeviceViewSet)
 
 
 urlpatterns = patterns('',
