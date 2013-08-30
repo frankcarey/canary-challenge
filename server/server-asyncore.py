@@ -2,31 +2,39 @@ import asyncore, time, json
 import socket
 import redis
 
-
-
 devices = {}
 notification_queue = []
 
-class EchoHandler(asyncore.dispatcher_with_send):
+class DeviceHandler(asyncore.dispatcher_with_send):
     redis = redis.Redis().pubsub()
+
+    #def send(self, data):
+    #    print 'Sent ' + repr(self.addr) + data
+    #    return super(DeviceHandler, self).send(data)
 
     def handle_read(self):
         data = self.recv(8192)
         data = json.loads(data)
         if data['device'] :
+            # Add registered devices to a dict to keep track of connections and registered devices.
             devices[data['device']] = self
-            print 'Device Registered:' + data['device']
+            # FYI: Use psubscribe when using pattern matching.
             self.redis.subscribe('device.' + data['device'])
-            self.send('OK')
-            # Use psubscribe when using pattern matching.
+            # Blocking
             for data_raw in self.redis.listen():
-                data = data_raw['data']
-                print data
-                self.send(json.dumps(data))
+                print repr(data_raw)
+                print data_raw['type']
+                if data_raw['type'] == 'subscribe':
+                    print 'Device Registered: ' + data['device'] + ' to connection ' + repr(self.addr)
+                    self.send('OK\r\n')
+                    pass
+                else :
+                    data = data_raw['data']
+                    print repr(data_raw)
+                    self.send(data)
             #self.send(json.dumps({'privacyMode': True}))
-    def handle_publish(self, msg):
-        print msg
-class EchoServer(asyncore.dispatcher):
+
+class DeviceServer(asyncore.dispatcher):
 
     def __init__(self, host, port):
         asyncore.dispatcher.__init__(self)
@@ -43,8 +51,8 @@ class EchoServer(asyncore.dispatcher):
             #Add the address to the overall connection list.
             print 'Incoming connection from %s' % repr(addr)
             print 'Current connections'
-            handler = EchoHandler(sock)
+            handler = DeviceHandler(sock)
 
-server = EchoServer('localhost', 8888)
+server = DeviceServer('localhost', 8888)
 print 'Listening on ' + str(server.addr)
 asyncore.loop()
