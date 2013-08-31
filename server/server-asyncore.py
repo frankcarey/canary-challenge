@@ -24,8 +24,6 @@ class DeviceHandler(asyncore.dispatcher_with_send):
         r.subscribe('device.' + serial)
         # Blocking
         for data_raw in r.listen():
-            print repr(data_raw)
-            print data_raw['type']
             if data_raw['type'] == 'subscribe':
                 print 'Device Registered: ' + serial + ' to connection ' + repr(self.addr)
                 self.send('OK\r\n')
@@ -40,7 +38,6 @@ class DeviceHandler(asyncore.dispatcher_with_send):
     def handle_read(self):
         data = self.recv(8192)
         data = json.loads(data)
-        print str(data)
         if data['device'] :
             g = Greenlet.spawn(self.device_subscribe, data['device'])
 
@@ -60,7 +57,6 @@ class DeviceServer(asyncore.dispatcher):
             self._address = addr
             #Add the address to the overall connection list.
             print 'Incoming connection from %s' % repr(addr)
-            print 'Current connections'
             handler = DeviceHandler(sock)
 
 server = DeviceServer('localhost', 8888)
