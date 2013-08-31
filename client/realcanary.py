@@ -1,6 +1,6 @@
 import sys, time, socket, json
 
-def realtime_client_run():
+def realtime_client_run(serial, handler):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
         s.connect(('127.0.0.1', 8888))
@@ -17,19 +17,22 @@ def realtime_client_run():
                 msg = s.recv(8192)
                 print 'Received: ' + str(msg)
                 msg_dict = json.loads(msg)
-                if (msg_dict['privacyMode']):
-                        privacyMode = msg_dict['privacyMode']
+                if isinstance(msg_dict['privacyMode'], bool):
                         print 'Updated privacyMode to: ' + str(msg_dict['privacyMode'])
-            else:
-                print 'Unexpected Message: ' + msg
+                        handler(msg_dict['privacyMode'])
+                else:
+                    print 'Unexpected Message: ' + msg
+                time.sleep(0)
     except socket.error, e:
         return e
 # Start the server
 def main(args):
+    def handler(privacyMode):
+        print 'update ' + str(privacyMode)
+
     try:
         serial = args[0]
-        privacyMode = False
-        print realtime_client_run()
+        realtime_client_run(serial, handler)
     except KeyboardInterrupt:
         pass
 if __name__ == '__main__':
