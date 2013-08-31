@@ -62,7 +62,7 @@ def rest_temp_post(temp):
         r = rest_session.post(REST_ADDRESS + TEMP_ENDPOINT, data=json.dumps(data),
                 headers={'content-type' : 'application/json'})
         if r.status_code == 201:
-            print 'Temperture Update [ Device: ' + str(device_id) + ' Temp:' + str(temp) + ' ]'
+            print 'Temperature Update [ Device: ' + str(device_id) + ' Temp:' + str(temp) + ' ]'
         else:
             print 'Temp update error'
     except socket.error as e:
