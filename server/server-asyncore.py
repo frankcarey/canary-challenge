@@ -1,38 +1,48 @@
+import gevent.monkey; gevent.monkey.patch_all()
+
 import asyncore, time, json
 import socket
 import redis
+import gevent
+from gevent import Greenlet
 
 devices = {}
-notification_queue = []
+greenlets_list = ()
+
 
 class DeviceHandler(asyncore.dispatcher_with_send):
-    redis = redis.Redis().pubsub()
 
     #def send(self, data):
     #    print 'Sent ' + repr(self.addr) + data
     #    return super(DeviceHandler, self).send(data)
-
+    def device_subscribe(self, serial):
+        print 'Subscribing...'
+        # Add registered devices to a dict to keep track of connections and registered devices.
+        devices[serial] = self
+        r = redis.Redis().pubsub()
+        # FYI: Use psubscribe when using pattern matching.
+        r.subscribe('device.' + serial)
+        # Blocking
+        for data_raw in r.listen():
+            print repr(data_raw)
+            print data_raw['type']
+            if data_raw['type'] == 'subscribe':
+                print 'Device Registered: ' + serial + ' to connection ' + repr(self.addr)
+                self.send('OK\r\n')
+                pass
+            else :
+                data = data_raw['data']
+                print repr(data_raw)
+                self.send(data)
+        time.sleep(0)
+        #self.send(json.dumps({'privacyMode': True}))
+        
     def handle_read(self):
         data = self.recv(8192)
         data = json.loads(data)
+        print str(data)
         if data['device'] :
-            # Add registered devices to a dict to keep track of connections and registered devices.
-            devices[data['device']] = self
-            # FYI: Use psubscribe when using pattern matching.
-            self.redis.subscribe('device.' + data['device'])
-            # Blocking
-            for data_raw in self.redis.listen():
-                print repr(data_raw)
-                print data_raw['type']
-                if data_raw['type'] == 'subscribe':
-                    print 'Device Registered: ' + data['device'] + ' to connection ' + repr(self.addr)
-                    self.send('OK\r\n')
-                    pass
-                else :
-                    data = data_raw['data']
-                    print repr(data_raw)
-                    self.send(data)
-            #self.send(json.dumps({'privacyMode': True}))
+            g = Greenlet.spawn(self.device_subscribe, data['device'])
 
 class DeviceServer(asyncore.dispatcher):
 
